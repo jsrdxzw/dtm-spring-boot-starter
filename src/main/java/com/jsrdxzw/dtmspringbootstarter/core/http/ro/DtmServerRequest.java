@@ -9,17 +9,16 @@ import lombok.NoArgsConstructor;
  * @author xuzhiwei
  * @date 2022/4/6 12:19
  */
-@SuppressWarnings("ALL")
-@Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Data
 public class DtmServerRequest {
     private String dtm;
 
-    private String trans_type;
+    private String transType;
 
-    private String branch_id;
+    private String branchId;
 
     private String gid;
 

@@ -1,10 +1,9 @@
 package com.jsrdxzw.dtmspringbootstarter.core.tcc;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.jsrdxzw.dtmspringbootstarter.core.BranchIDGen;
 import com.jsrdxzw.dtmspringbootstarter.core.TransactionBase;
-import com.jsrdxzw.dtmspringbootstarter.core.client.HttpClient;
 import com.jsrdxzw.dtmspringbootstarter.core.enums.*;
+import com.jsrdxzw.dtmspringbootstarter.core.http.HttpClient;
 import com.jsrdxzw.dtmspringbootstarter.core.http.ro.DtmRegisterBranchRequest;
 import com.jsrdxzw.dtmspringbootstarter.core.http.ro.DtmRequestBranchRequest;
 import com.jsrdxzw.dtmspringbootstarter.core.http.vo.DtmServerResult;
@@ -13,7 +12,7 @@ import com.jsrdxzw.dtmspringbootstarter.utils.JsonUtil;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.Response;
+import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 
 import java.util.Objects;
@@ -31,11 +30,19 @@ import static com.jsrdxzw.dtmspringbootstarter.core.enums.TransOperation.REGISTE
 @Data
 public class Tcc extends TransactionBase {
 
-    public Tcc(String server, String gid) {
-        super(gid, TransType.TCC.getDesc(), server, "");
+    public Tcc(HttpClient httpClient) {
+        super(TransType.TCC.getDesc(), httpClient.getDtmServerUrl(), "");
+        this.httpClient = httpClient;
     }
 
-    public void tccGlobalTransaction(HttpClient httpClient, Consumer<Tcc> func) {
+    /**
+     * the step of try branches is completed usually
+     *
+     * @param func
+     * @return
+     */
+    public DtmServerResult tccGlobalTransaction(Consumer<Tcc> func) {
+        this.retrieveDtmGid();
         try {
             DtmServerResult result = httpClient.transCallDtm(this, TransOperation.PREPARE.getDesc());
             if (result.getResult() == null || !DtmResultEnum.SUCCESS.equals(result.getResult())) {
@@ -44,7 +51,8 @@ public class Tcc extends TransactionBase {
                 throw new RuntimeException("error request tcc prepare : " + errMsg);
             }
             func.accept(this);
-            httpClient.transCallDtm(this, TransOperation.SUBMIT.getDesc());
+            // 3. submit global transaction
+            return httpClient.transCallDtm(this, TransOperation.SUBMIT.getDesc());
         } catch (Exception e) {
             httpClient.transCallDtm(this, TransOperation.ABORT.getDesc());
             throw e;
@@ -55,40 +63,48 @@ public class Tcc extends TransactionBase {
      * 1. register confirm and cancel branch to dtm
      * 2. request try to DM
      *
-     * @param httpClient
      * @param body
      * @param tryUrl
      * @param confirmUrl
      * @param cancelUrl
      */
-    public void callBranch(HttpClient httpClient, Object body, String tryUrl, String confirmUrl, String cancelUrl) {
+    public void callBranch(Object body, String tryUrl, String confirmUrl, String cancelUrl) {
+        this.retrieveDtmGid();
         DtmRegisterBranchRequest registerBranchRequest = buildBranchRegisterRequest();
         if (Objects.nonNull(body)) {
             registerBranchRequest.setData(JsonUtil.writeToString(body));
         }
         registerBranchRequest.setConfirm(confirmUrl);
         registerBranchRequest.setCancel(cancelUrl);
-        BranchIDGen branchIdGen = getBranchIdGen();
-        String branchId = branchIdGen.newSubBranchId();
+
+        String branchId = this.branchIdGen.newSubBranchId();
         registerBranchRequest.setBranchId(branchId);
 
+        // 1. register branch
         DtmServerResult result = httpClient.transCallDtm(registerBranchRequest, REGISTER_BRANCH.getDesc());
         if (result.getResult() == null || !DtmResultEnum.SUCCESS.equals(result.getResult())) {
             String errMsg = StringUtils.hasText(result.getMessage()) ? result.getMessage() : "inner server error";
             throw new RuntimeException("error request tcc register branch : " + errMsg);
         }
 
+        // 2. invoke try branch
         DtmRequestBranchRequest branchRequest = DtmRequestBranchRequest
-                .buildRequestBranchRequest(this, tryUrl, branchId, BranchOperation.BranchTry.getOp(), HttpMethod.POST);
-        // request try branch immediately
-        Response response = httpClient.transRequestBranch(branchRequest);
-        httpClient.catchErrorFromResponse(response);
+                .buildRequestBranchRequest(this, body, tryUrl, branchId, BranchOperation.BranchTry.getOp(), HttpMethod.POST);
+        ResponseEntity<DtmServerResult> response = httpClient.transRequestBranch(branchRequest);
+        try {
+            httpClient.catchErrorFromResponse(response);
+        } catch (DtmException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("request callBranch error, {}", e.getMessage());
+            throw new RuntimeException(e);
+        }
     }
 
     private DtmRegisterBranchRequest buildBranchRegisterRequest() {
         DtmRegisterBranchRequest branchRegisterRequest = new DtmRegisterBranchRequest();
-        branchRegisterRequest.setGid(getGid());
-        branchRegisterRequest.setTransType(getTransType());
+        branchRegisterRequest.setGid(this.gid);
+        branchRegisterRequest.setTransType(this.transType);
         return branchRegisterRequest;
     }
 }

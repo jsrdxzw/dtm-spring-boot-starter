@@ -4,10 +4,10 @@ import java.lang.annotation.*;
 
 /**
  * @author xuzhiwei
- * @date 2022/4/6 16:49
+ * @date 2022/4/9 12:14
  */
-@Target(ElementType.PARAMETER)
+@Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface DtmBarrier {
+public @interface DtmResponse {
 }

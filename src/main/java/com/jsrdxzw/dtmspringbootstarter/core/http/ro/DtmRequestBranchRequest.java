@@ -32,7 +32,7 @@ public class DtmRequestBranchRequest {
     private Object body;
 
     public static DtmRequestBranchRequest buildRequestBranchRequest(
-            TransactionBase base, String tryUrl, String branchId, String op, HttpMethod httpMethod) {
+            TransactionBase base, Object body, String tryUrl, String branchId, String op, HttpMethod httpMethod) {
         return DtmRequestBranchRequest.builder()
                 .method(httpMethod)
                 .url(tryUrl)
@@ -42,7 +42,7 @@ public class DtmRequestBranchRequest {
                 .gid(base.getGid())
                 .op(op)
                 .transType(base.getTransType())
-                .body(base)
+                .body(body)
                 .build();
     }
 }

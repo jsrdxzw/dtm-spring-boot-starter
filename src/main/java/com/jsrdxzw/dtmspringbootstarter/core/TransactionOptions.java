@@ -16,22 +16,22 @@ import java.util.Map;
 public class TransactionOptions {
 
     @JsonProperty("wait_result")
-    private Boolean waitResult;
+    protected Boolean waitResult;
 
     @JsonProperty("timeout_to_fail")
-    private Long timeoutToFail;
+    protected Long timeoutToFail;
 
     @JsonProperty("requestTimeout")
-    private Long requestTimeout;
+    protected Long requestTimeout;
 
     @JsonProperty("retry_interval")
-    private Long retryInterval;
+    protected Long retryInterval;
 
     @JsonProperty("passthrough_headers")
-    private List<String> passthroughHeaders;
+    protected List<String> passthroughHeaders;
 
     @JsonProperty("branch_headers")
-    private Map<String, String> branchHeaders;
+    protected Map<String, String> branchHeaders;
 
-    private Boolean concurrent;
+    protected Boolean concurrent;
 }

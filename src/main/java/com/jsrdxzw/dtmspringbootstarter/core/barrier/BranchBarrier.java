@@ -2,11 +2,18 @@ package com.jsrdxzw.dtmspringbootstarter.core.barrier;
 
 import com.jsrdxzw.dtmspringbootstarter.core.enums.BranchOperation;
 import com.jsrdxzw.dtmspringbootstarter.core.http.ro.DtmServerRequest;
-import lombok.*;
+import lombok.Data;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static com.jsrdxzw.dtmspringbootstarter.core.enums.BranchOperation.BranchCancel;
@@ -16,6 +23,7 @@ import static com.jsrdxzw.dtmspringbootstarter.core.enums.BranchOperation.Branch
  * @author xuzhiwei
  * @date 2022/4/6 11:57
  */
+@Slf4j
 @Data
 public class BranchBarrier {
     /**
@@ -44,7 +52,7 @@ public class BranchBarrier {
     private String reason;
 
     public BranchBarrier(DtmServerRequest request) {
-        this(request.getTrans_type(), request.getGid(), request.getBranch_id(), request.getOp());
+        this(request.getTransType(), request.getGid(), request.getBranchId(), request.getOp());
     }
 
     public BranchBarrier(String transType, String gid, String branchId, String op) {
@@ -58,8 +66,16 @@ public class BranchBarrier {
     /**
      * transaction barrier，to see details in https://zhuanlan.zhihu.com/p/388444465
      */
-    public void call(Connection connection, Consumer<BranchBarrier> bizCall) throws Exception {
-        connection.setAutoCommit(false);
+    public void call(DataSourceTransactionManager transactionManager, Consumer<BranchBarrier> bizCall) throws Exception {
+        DefaultTransactionDefinition definition = new DefaultTransactionDefinition();
+        definition.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRED);
+        TransactionStatus transactionStatus = transactionManager.getTransaction(definition);
+        if (Objects.isNull(transactionManager.getDataSource())) {
+            log.error("transaction manager datasource can not be null");
+            throw new RuntimeException("transaction manager datasource can not be null");
+        }
+
+        Connection connection = DataSourceUtils.getConnection(transactionManager.getDataSource());
         this.barrierId++;
         BranchOperation currentOp = BranchOperation.fromOp(op);
         BranchOperation originOp = BranchOperation.getOriginOp(op);
@@ -73,12 +89,10 @@ public class BranchBarrier {
                 return;
             }
             bizCall.accept(this);
-            connection.commit();
+            transactionManager.commit(transactionStatus);
         } catch (Exception e) {
-            connection.rollback();
+            transactionManager.rollback(transactionStatus);
             throw e;
-        } finally {
-            connection.close();
         }
     }
 

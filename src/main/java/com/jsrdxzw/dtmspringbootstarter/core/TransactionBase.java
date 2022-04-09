@@ -3,9 +3,11 @@ package com.jsrdxzw.dtmspringbootstarter.core;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.jsrdxzw.dtmspringbootstarter.core.http.HttpClient;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,40 +24,42 @@ import java.util.Map;
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class TransactionBase extends TransactionOptions {
-    private String gid;
+    @JsonIgnore
+    protected HttpClient httpClient;
+
+    protected String gid;
 
     @JsonProperty("trans_type")
-    private String transType;
+    protected String transType;
 
     @JsonIgnore
-    private String dtm;
+    protected String dtm;
 
     @JsonProperty("custom_data")
-    private String customData;
+    protected String customData;
 
     @JsonProperty("steps")
-    private List<Map<String, String>> steps;
+    protected List<Map<String, String>> steps;
 
     @JsonProperty("payloads")
-    private List<String> payloads;
+    protected List<String> payloads;
 
     @JsonIgnore
-    private List<List<Byte>> binPayloads;
+    protected List<List<Byte>> binPayloads;
 
     @JsonIgnore
-    private BranchIDGen branchIdGen;
+    protected BranchIDGen branchIdGen;
 
     @JsonIgnore
-    private String op;
+    protected String op;
 
     @JsonProperty("query_prepared")
-    private String queryPrepared;
+    protected String queryPrepared;
 
     @JsonProperty("protocol")
-    private String protocol;
+    protected String protocol;
 
-    public TransactionBase(String gid, String transType, String dtm, String branchId) {
-        this.gid = gid;
+    public TransactionBase(String transType, String dtm, String branchId) {
         this.transType = transType;
         this.dtm = dtm;
         BranchIDGen branchIdGen = new BranchIDGen();
@@ -63,5 +67,12 @@ public class TransactionBase extends TransactionOptions {
         this.branchIdGen = branchIdGen;
         this.payloads = new ArrayList<>();
         this.steps = new ArrayList<>();
+    }
+
+    protected void retrieveDtmGid() {
+        if (StringUtils.hasText(this.gid)) {
+            return;
+        }
+        this.gid = httpClient.getNewGid().getGid();
     }
 }

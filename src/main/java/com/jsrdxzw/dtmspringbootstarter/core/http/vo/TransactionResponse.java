@@ -1,21 +1,22 @@
 package com.jsrdxzw.dtmspringbootstarter.core.http.vo;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+import com.jsrdxzw.dtmspringbootstarter.core.enums.DtmResultEnum;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 /**
  * @author xuzhiwei
  * @date 2022/4/6 22:05
  */
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
 public class TransactionResponse {
 
     @JsonProperty("dtm_result")
     private String dtmResult;
+
+    public static TransactionResponse dtmSuccess() {
+        TransactionResponse transactionResponse = new TransactionResponse();
+        transactionResponse.dtmResult = DtmResultEnum.SUCCESS.name();
+        return transactionResponse;
+    }
 }

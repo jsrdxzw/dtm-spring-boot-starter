@@ -2,10 +2,10 @@ package com.jsrdxzw.dtmspringbootstarter.core.saga;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.jsrdxzw.dtmspringbootstarter.core.TransactionBase;
-import com.jsrdxzw.dtmspringbootstarter.core.client.HttpClient;
 import com.jsrdxzw.dtmspringbootstarter.core.enums.DtmResultEnum;
 import com.jsrdxzw.dtmspringbootstarter.core.enums.TransOperation;
 import com.jsrdxzw.dtmspringbootstarter.core.enums.TransType;
+import com.jsrdxzw.dtmspringbootstarter.core.http.HttpClient;
 import com.jsrdxzw.dtmspringbootstarter.core.http.vo.DtmServerResult;
 import com.jsrdxzw.dtmspringbootstarter.utils.JsonUtil;
 import lombok.Data;
@@ -28,9 +28,25 @@ public class Saga extends TransactionBase {
 
     private Map<Integer, List<Integer>> orders;
 
-    public Saga(String server, String gid) {
-        super(gid, TransType.SAGA.getDesc(), server, "");
-        orders = new HashMap<>();
+    public Saga(HttpClient httpClient) {
+        super(TransType.SAGA.getDesc(), httpClient.getDtmServerUrl(), "");
+        this.orders = new HashMap<>();
+        this.httpClient = httpClient;
+    }
+
+    public Saga addBranchOrder(int branch, List<Integer> preBranches) {
+        this.orders.put(branch, preBranches);
+        return this;
+    }
+
+    public Saga waitResult() {
+        this.waitResult = true;
+        return this;
+    }
+
+    public Saga enableConcurrent() {
+        this.concurrent = true;
+        return this;
     }
 
     @SneakyThrows
@@ -38,35 +54,31 @@ public class Saga extends TransactionBase {
         Map<String, String> step = new HashMap<>();
         step.put("action", action);
         step.put("compensate", compensate);
-        List<Map<String, String>> steps = getSteps();
-        steps.add(step);
+        this.steps.add(step);
 
         String payload = JsonUtil.writeToString(postData);
-        List<String> payloads = getPayloads();
-        payloads.add(payload);
+        this.payloads.add(payload);
+
         return this;
     }
 
-    public Saga setConcurrent() {
-        setConcurrent(true);
-        return this;
-    }
-
-    public void submit(HttpClient httpClient) {
+    public DtmServerResult submit() {
+        this.retrieveDtmGid();
         this.buildCustomOptions();
         DtmServerResult result = httpClient.transCallDtm(this, TransOperation.SUBMIT.getDesc());
         if (result.getResult() == null || !DtmResultEnum.SUCCESS.equals(result.getResult())) {
             String errMsg = StringUtils.hasText(result.getMessage()) ? result.getMessage() : "inner server error";
             throw new RuntimeException("error request saga submit : " + errMsg);
         }
+        return result;
     }
 
     private void buildCustomOptions() {
-        if (Boolean.TRUE.equals(getConcurrent())) {
+        if (Boolean.TRUE.equals(this.concurrent)) {
             Map<String, Object> map = new HashMap<>();
-            map.put("orders", orders);
-            map.put("concurrent", getConcurrent());
-            this.setCustomData(JsonUtil.writeToString(map));
+            map.put("orders", this.orders);
+            map.put("concurrent", this.concurrent);
+            this.customData = JsonUtil.writeToString(map);
         }
     }
 }
