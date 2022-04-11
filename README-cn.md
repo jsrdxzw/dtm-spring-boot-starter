@@ -2,7 +2,7 @@
 
 ## dtm-spring-boot-starter
 
-dtm-spring-boot-starter 是 [dtm](https://github.com/dtm-labs/dtm)的java 客户端，依赖于
+dtm-spring-boot-starter 是 [dtm](https://github.com/dtm-labs/dtm) 的java 客户端，依赖于
 spring-boot 2.x版本，目前支持:
 + TCC 分布式事务
 + Saga 分布式事务
@@ -145,7 +145,7 @@ public ResultData tccTransInCancel(@DtmBarrier BranchBarrier branchBarrier, @Req
 // ...
 ```
 
-### Msg two-phase commit
+### 两阶段提交
 ```java
 public void doSomething() {
      TransReq req = TransReq.builder().amount(BigDecimal.valueOf(30)).build();
