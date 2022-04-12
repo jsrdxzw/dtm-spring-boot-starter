@@ -65,8 +65,11 @@ public class BranchBarrier {
 
     /**
      * transaction barrier，to see details in https://zhuanlan.zhihu.com/p/388444465
+     *
+     * @param transactionManager spring transactionManager
+     * @param bizCall            business logic call function
      */
-    public void call(DataSourceTransactionManager transactionManager, Consumer<BranchBarrier> bizCall) throws Exception {
+    public void call(DataSourceTransactionManager transactionManager, Consumer<BranchBarrier> bizCall) {
         DefaultTransactionDefinition definition = new DefaultTransactionDefinition();
         definition.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRED);
         TransactionStatus transactionStatus = transactionManager.getTransaction(definition);

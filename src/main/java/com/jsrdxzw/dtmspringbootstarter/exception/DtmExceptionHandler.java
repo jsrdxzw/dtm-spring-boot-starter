@@ -24,9 +24,9 @@ public class DtmExceptionHandler {
     /**
      * handle defined exception
      *
-     * @param req
-     * @param e
-     * @return
+     * @param req servlet request
+     * @param e   exception
+     * @return ResponseEntity
      */
     @ExceptionHandler(value = DtmException.class)
     @ResponseBody

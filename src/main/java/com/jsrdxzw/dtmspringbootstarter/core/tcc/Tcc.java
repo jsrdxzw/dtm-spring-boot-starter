@@ -38,8 +38,8 @@ public class Tcc extends TransactionBase {
     /**
      * the step of try branches is completed usually
      *
-     * @param func
-     * @return
+     * @param func callback
+     * @return DtmServerResult
      */
     public DtmServerResult tccGlobalTransaction(Consumer<Tcc> func) {
         this.retrieveDtmGid();
@@ -63,10 +63,10 @@ public class Tcc extends TransactionBase {
      * 1. register confirm and cancel branch to dtm
      * 2. request try to DM
      *
-     * @param body
-     * @param tryUrl
-     * @param confirmUrl
-     * @param cancelUrl
+     * @param body       post body
+     * @param tryUrl     try url
+     * @param confirmUrl confirm url
+     * @param cancelUrl  cancel url
      */
     public void callBranch(Object body, String tryUrl, String confirmUrl, String cancelUrl) {
         this.retrieveDtmGid();

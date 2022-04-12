@@ -129,6 +129,11 @@
                         <configuration>
                             <source>${java.version}</source>
                             <javadocExecutable>${java.home}/bin/javadoc</javadocExecutable>
+                            <tags>
+                                <tag>
+                                    <name>date</name>
+                                </tag>
+                            </tags>
                         </configuration>
                         <executions>
                             <execution>

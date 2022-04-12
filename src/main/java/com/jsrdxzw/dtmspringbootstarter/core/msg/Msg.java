@@ -62,21 +62,22 @@ public class Msg extends TransactionBase {
     public void doAndSubmitDb(
             DataSourceTransactionManager transactionManager, String queryPrepared, Consumer<BranchBarrier> businessCall) {
         doAndSubmit(queryPrepared, barrier -> {
-            try {
-                barrier.call(transactionManager, businessCall);
-            } catch (Exception e) {
-                log.error("doAndSubmitDb error: {}", e.getMessage());
-                throw new RuntimeException(e.getMessage());
-            }
+            barrier.call(transactionManager, businessCall);
         });
     }
 
     /**
-     * it is one method for the entire prepare -> business call -> submit
-     * if business call return ErrFailure, then abort is called directly
-     * if business call return no error other than ErrFailure, then DoAndSubmit will call queryPrepared to get the result
+     * it is one method for processing:
+     * <p>
+     * 1. prepare
+     * 2. business call
+     * 3. submit
+     * </p>
+     * if business call return ErrFailure, then abort is called directly.
+     * if business call return no error rather than ErrFailure, then DoAndSubmit will call queryPrepared to get the result
      *
-     * @return
+     * @param queryPrepared query url
+     * @param businessCall  business logic call function
      */
     public void doAndSubmit(String queryPrepared, Consumer<BranchBarrier> businessCall) {
         this.retrieveDtmGid();
