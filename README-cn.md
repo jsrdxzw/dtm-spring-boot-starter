@@ -15,7 +15,7 @@ spring-boot 2.x版本，目前支持:
 <dependency>
     <groupId>com.jsrdxzw.github</groupId>
     <artifactId>dtm-spring-boot-starter</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 </dependency>
 ```
 2. 配置dtm服务
@@ -155,3 +155,6 @@ public void doSomething() {
      msg.submit();
 }
 ```
+
+### 更多的例子
+可以参考 [dtm-spring-boot-starter](https://github.com/jsrdxzw/dtm-spring-boot-example) 

@@ -1,7 +1,6 @@
 package com.jsrdxzw.dtmspringbootstarter.core.http;
 
 import com.jsrdxzw.dtmspringbootstarter.core.enums.DtmResultEnum;
-import com.jsrdxzw.dtmspringbootstarter.core.enums.HttpMethod;
 import com.jsrdxzw.dtmspringbootstarter.core.http.ro.DtmRequestBranchRequest;
 import com.jsrdxzw.dtmspringbootstarter.core.http.vo.DtmServerResult;
 import com.jsrdxzw.dtmspringbootstarter.core.http.vo.GenGidResult;
@@ -11,10 +10,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.HashMap;
@@ -53,7 +52,7 @@ public class HttpClient {
     }
 
     public ResponseEntity<DtmServerResult> transRequestBranch(DtmRequestBranchRequest request) {
-        Map<String, String> queryParam = new HashMap<>();
+        Map<String, Object> queryParam = new HashMap<>();
         queryParam.put("dtm", request.getDtm());
         queryParam.put("trans_type", request.getTransType());
         queryParam.put("branch_id", request.getBranchId());
@@ -75,24 +74,20 @@ public class HttpClient {
         throw new RuntimeException("unsupported http method:" + request.getMethod());
     }
 
-    public ResponseEntity<DtmServerResult> get(String url, HttpHeaders headers, Map<String, String> parameters) {
+    public ResponseEntity<DtmServerResult> get(String baseUrl, HttpHeaders headers, Map<String, Object> parameters) {
         HttpEntity<?> entity = new HttpEntity<>(headers);
 
-        UriComponentsBuilder uriComponentsBuilder = UriComponentsBuilder.fromUriString(url);
-        UriComponents uriComponents = uriComponentsBuilder.buildAndExpand(parameters);
-        String fullUrl = uriComponents.toUriString();
+        String url = componentQueryParams(baseUrl, parameters);
 
-        return restTemplate.exchange(fullUrl, org.springframework.http.HttpMethod.GET, entity, DtmServerResult.class);
+        return restTemplate.exchange(url, HttpMethod.GET, entity, DtmServerResult.class);
     }
 
-    public ResponseEntity<DtmServerResult> post(String url, Object body, HttpHeaders headers, Map<String, String> parameters) {
+    public ResponseEntity<DtmServerResult> post(String baseUrl, Object body, HttpHeaders headers, Map<String, Object> parameters) {
         HttpEntity<?> entity = new HttpEntity<>(body, headers);
 
-        UriComponentsBuilder uriComponentsBuilder = UriComponentsBuilder.fromUriString(url);
-        UriComponents uriComponents = uriComponentsBuilder.buildAndExpand(parameters);
-        String fullUrl = uriComponents.toUriString();
+        String url = componentQueryParams(baseUrl, parameters);
 
-        return restTemplate.exchange(fullUrl, org.springframework.http.HttpMethod.POST, entity, DtmServerResult.class);
+        return restTemplate.exchange(url, HttpMethod.POST, entity, DtmServerResult.class);
     }
 
     public void catchErrorFromResponse(ResponseEntity<DtmServerResult> response) {
@@ -104,5 +99,13 @@ public class HttpClient {
                 || (response.getBody() != null && DtmResultEnum.ONGOING.equals(response.getBody().getResult()))) {
             throw DtmException.ongoing();
         }
+    }
+
+    private String componentQueryParams(String baseUrl, Map<String, Object> params) {
+        UriComponentsBuilder uriComponentsBuilder = UriComponentsBuilder.fromUriString(baseUrl);
+        for (Map.Entry<String, Object> entry : params.entrySet()) {
+            uriComponentsBuilder.queryParam(entry.getKey(), entry.getValue());
+        }
+        return uriComponentsBuilder.build().toUriString();
     }
 }

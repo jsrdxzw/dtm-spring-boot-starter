@@ -19,7 +19,7 @@ Now this sdk supports following distributed transaction features:
 <dependency>
     <groupId>com.jsrdxzw.github</groupId>
     <artifactId>dtm-spring-boot-starter</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 </dependency>
 ```
 2. dtm server configuration
@@ -160,3 +160,6 @@ public void doSomething() {
 }
 ```
 
+### more examples
+
+please see [dtm-spring-boot-starter](https://github.com/jsrdxzw/dtm-spring-boot-example) examples to learn more details.

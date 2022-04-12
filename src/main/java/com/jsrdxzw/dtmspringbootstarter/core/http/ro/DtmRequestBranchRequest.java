@@ -1,11 +1,11 @@
 package com.jsrdxzw.dtmspringbootstarter.core.http.ro;
 
 import com.jsrdxzw.dtmspringbootstarter.core.TransactionBase;
-import com.jsrdxzw.dtmspringbootstarter.core.enums.HttpMethod;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.http.HttpMethod;
 
 import java.util.Map;
 
