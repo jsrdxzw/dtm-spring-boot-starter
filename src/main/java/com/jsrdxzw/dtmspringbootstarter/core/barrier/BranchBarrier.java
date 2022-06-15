@@ -2,6 +2,7 @@ package com.jsrdxzw.dtmspringbootstarter.core.barrier;
 
 import com.jsrdxzw.dtmspringbootstarter.core.enums.BranchOperation;
 import com.jsrdxzw.dtmspringbootstarter.core.http.ro.DtmServerRequest;
+import com.jsrdxzw.dtmspringbootstarter.exception.DtmException;
 import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +14,8 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -26,6 +29,10 @@ import static com.jsrdxzw.dtmspringbootstarter.core.enums.BranchOperation.Branch
 @Slf4j
 @Data
 public class BranchBarrier {
+
+    private static String MsgDoBranch0 = "00";
+    private static int MsgDoBarrier1 = 1;
+
     /**
      * type of global transaction
      * such as saga, tcc, xa
@@ -131,6 +138,35 @@ public class BranchBarrier {
             preparedStatement.setString(5, String.format("%02d", barrierId));
             preparedStatement.setString(6, reason);
             return preparedStatement.executeUpdate();
+        }
+    }
+
+    /**
+     * call query to make sure if the business transaction has been committed
+     *
+     * @param transactionManager
+     */
+    public void queryPrepared(DataSourceTransactionManager transactionManager) {
+        if (Objects.isNull(transactionManager.getDataSource())) {
+            throw new RuntimeException("transaction manager datasource can not be null");
+        }
+        Connection connection = DataSourceUtils.getConnection(transactionManager.getDataSource());
+        insertBarrier(connection, transType, gid, MsgDoBranch0,
+                BranchOperation.BranchMSG.getOp(), MsgDoBarrier1, BranchOperation.BranchRollback.getOp());
+        String sql = "select reason from barrier where gid=? and branch_id=? and op=? and barrier_id=?";
+        String reason;
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            preparedStatement.setString(1, gid);
+            preparedStatement.setString(2, MsgDoBranch0);
+            preparedStatement.setString(3, op);
+            preparedStatement.setString(4, String.format("%02d", MsgDoBarrier1));
+            ResultSet resultSet = preparedStatement.executeQuery();
+            reason = resultSet.getString("reason");
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        if (BranchOperation.BranchRollback.getOp().equals(reason)) {
+            throw DtmException.failure();
         }
     }
 

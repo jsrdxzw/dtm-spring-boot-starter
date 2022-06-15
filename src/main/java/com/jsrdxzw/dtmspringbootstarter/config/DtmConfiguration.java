@@ -21,7 +21,7 @@ public class DtmConfiguration {
     private String httpServer;
 
     @Bean
-    public HttpClient httpClient() {
+    public HttpClient dtmHttpClient() {
         return new HttpClient(httpServer);
     }
 

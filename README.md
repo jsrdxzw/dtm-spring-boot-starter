@@ -19,7 +19,7 @@ Now this sdk supports following distributed transaction features:
 <dependency>
     <groupId>com.jsrdxzw.github</groupId>
     <artifactId>dtm-spring-boot-starter</artifactId>
-    <version>1.0.1</version>
+    <version>1.1.0</version>
 </dependency>
 ```
 2. dtm server configuration
@@ -157,6 +157,28 @@ public void doSomething() {
      msg.prepare(HOST + "/query");
      // ... your business logic
      msg.submit();
+}
+```
+
+commit and query
+```java
+@GetMapping("/query")
+public DtmServerResult queryDtm(@DtmBarrier BranchBarrier branchBarrier) {
+     branchBarrier.queryPrepared(transactionManager);
+     DtmServerResult dtmServerResult = new DtmServerResult();
+     dtmServerResult.setResult(DtmResultEnum.SUCCESS);
+     return dtmServerResult;
+}
+
+@PostMapping("/http_msg_doAndCommit")
+public String httpMsgDoAndCommit() {
+     TransReq req = TransReq.builder().amount(BigDecimal.valueOf(200)).build();
+     Msg msg = new Msg(dtmHttpClient).add(host + "/SagaBTransIn", req);
+     msg.doAndSubmitDb(transactionManager, host + "/query", barrier -> {
+        System.out.println("submit transout");
+        userAccountMapper.sagaAdjustBalance(TRANSOUT_UID, req.getAmount().negate());
+     });
+     return "ok";
 }
 ```
 
