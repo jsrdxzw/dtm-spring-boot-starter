@@ -144,7 +144,7 @@ public class BranchBarrier {
     /**
      * call query to make sure if the business transaction has been committed
      *
-     * @param transactionManager
+     * @param transactionManager spring transactionManager
      */
     public void queryPrepared(DataSourceTransactionManager transactionManager) {
         if (Objects.isNull(transactionManager.getDataSource())) {
